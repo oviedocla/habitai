@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HabitAI — Tu coach de hábitos con inteligencia artificial</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1A14;
+    --moss: #3D5A3E;
+    --sage: #7A9E7E;
+    --warm: #C4A882;
+    --blush: #E8DDD0;
+    --accent: #D4611A;
+    --light-moss: #EBF0EB;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100;
+    background: linear-gradient(to bottom, var(--cream) 60%, transparent);
+  }
+
+  .nav-logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--moss);
+    letter-spacing: -0.5px;
+  }
+
+  .nav-cta {
+    background: var(--moss);
+    color: var(--cream);
+    border: none;
+    padding: 10px 22px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .nav-cta:hover { background: var(--ink); transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  .orb1 { width: 500px; height: 500px; background: rgba(122,158,126,0.18); top: -100px; left: -150px; animation: drift1 18s ease-in-out infinite; }
+  .orb2 { width: 400px; height: 400px; background: rgba(196,168,130,0.15); bottom: -50px; right: -100px; animation: drift2 22s ease-in-out infinite; }
+  .orb3 { width: 300px; height: 300px; background: rgba(212,97,26,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: drift3 15s ease-in-out infinite; }
+
+  @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(40px,30px)} }
+  @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,-20px)} }
+  @keyframes drift3 { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.2)} }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--light-moss);
+    color: var(--moss);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-tag .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sage);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero-h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(48px, 8vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -2px;
+    color: var(--ink);
+    max-width: 800px;
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .hero-h1 em {
+    font-style: italic;
+    color: var(--moss);
+  }
+
+  .hero-sub {
+    font-size: clamp(16px, 2vw, 20px);
+    font-weight: 300;
+    color: #5A5A4A;
+    max-width: 480px;
+    line-height: 1.6;
+    margin-top: 24px;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-actions {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .btn-primary {
+    background: var(--moss);
+    color: var(--cream);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.2px;
+  }
+  .btn-primary:hover { background: var(--ink); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(61,90,62,0.25); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-primary .arrow {
+    width: 20px; height: 20px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: transform 0.2s;
+  }
+  .btn-primary:hover .arrow { transform: translateX(3px); }
+
+  .hero-note {
+    font-size: 12px;
+    color: #9A9A8A;
+    font-weight: 300;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SOCIAL PROOF STRIP */
+  .proof-strip {
+    background: var(--blush);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(26,26,20,0.08);
+    border-bottom: 1px solid rgba(26,26,20,0.08);
+  }
+
+  .proof-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #5A5A4A;
+  }
+
+  .proof-icon { font-size: 16px; }
+
+  /* MOCKUP SECTION */
+  .mockup-section {
+    padding: 100px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 80px;
+    max-width: 1100px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+  }
+
+  .mockup-text { flex: 1; min-width: 280px; max-width: 440px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 16px;
+  }
+
+  .section-h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+  }
+
+  .section-h2 em { font-style: italic; color: var(--moss); }
+
+  .section-body {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #5A5A4A;
+    margin-bottom: 32px;
+  }
+
+  /* PHONE MOCKUP */
+  .phone-wrap { flex-shrink: 0; }
+
+  .phone {
+    width: 260px;
+    background: var(--ink);
+    border-radius: 40px;
+    padding: 16px;
+    box-shadow: 0 40px 80px rgba(26,26,20,0.25), 0 0 0 1px rgba(26,26,20,0.1);
+    position: relative;
+  }
+
+  .phone-notch {
+    width: 80px; height: 6px;
+    background: #2A2A20;
+    border-radius: 3px;
+    margin: 0 auto 16px;
+  }
+
+  .phone-screen {
+    background: #F5F0E8;
+    border-radius: 28px;
+    padding: 20px 16px;
+    min-height: 480px;
+  }
+
+  .phone-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .phone-greeting {
+    font-family: 'Instrument Serif', serif;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
+  .phone-streak {
+    background: var(--moss);
+    color: var(--cream);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .chat-bubble {
+    background: var(--moss);
+    color: var(--cream);
+    border-radius: 16px 16px 16px 4px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    font-weight: 300;
+  }
+
+  .habit-list { margin-bottom: 16px; }
+
+  .habit-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(26,26,20,0.06);
+    font-size: 13px;
+  }
+
+  .habit-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: var(--cream);
+  }
+
+  .check-done { background: var(--moss); }
+  .check-todo { background: transparent; border: 1.5px solid #C0C0B0; }
+
+  .habit-name { flex: 1; color: var(--ink); }
+  .habit-streak { font-size: 11px; color: var(--sage); }
+
+  .phone-input {
+    background: var(--blush);
+    border-radius: 20px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #9A9A8A;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .phone-send {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--moss);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* FEATURES SECTION */
+  .features {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 100px 40px;
+  }
+
+  .features-inner {
+    max-width: 1100px; margin: 0 auto;
+  }
+
+  .features-header {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+
+  .features-header .section-label { color: var(--sage); }
+
+  .features-header .section-h2 {
+    color: var(--cream);
+    font-size: clamp(32px, 4vw, 52px);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2px;
+  }
+
+  .feat-card {
+    background: #23231A;
+    padding: 32px 28px;
+    transition: background 0.2s;
+  }
+  .feat-card:hover { background: #2A2A20; }
+  .feat-card:first-child { border-radius: 20px 0 0 20px; }
+  .feat-card:last-child { border-radius: 0 20px 20px 0; }
+
+  .feat-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 48px;
+    color: var(--moss);
+    opacity: 0.4;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .feat-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--cream);
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .feat-body {
+    font-size: 14px;
+    color: #8A8A7A;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* TESTIMONIAL */
+  .testimonial-section {
+    padding: 100px 40px;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .quote-mark {
+    font-family: 'Instrument Serif', serif;
+    font-size: 120px;
+    color: var(--sage);
+    opacity: 0.2;
+    line-height: 0.6;
+    margin-bottom: -20px;
+  }
+
+  .quote-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(22px, 3vw, 34px);
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ink);
+    margin-bottom: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  .quote-author {
+    font-size: 13px;
+    color: #9A9A8A;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+
+  .author-dot { width: 24px; height: 1px; background: #C0C0B0; }
+
+  /* HOW IT WORKS */
+  .how {
+    background: var(--light-moss);
+    padding: 100px 40px;
+  }
+
+  .how-inner { max-width: 1100px; margin: 0 auto; }
+
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 40px;
+    margin-top: 60px;
+    counter-reset: steps;
+  }
+
+  .how-step { counter-increment: steps; }
+
+  .step-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 72px;
+    color: var(--moss);
+    opacity: 0.15;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .step-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .step-body {
+    font-size: 15px;
+    color: #5A5A4A;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* CTA FINAL */
+  .final-cta {
+    padding: 120px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: rgba(122,158,126,0.12);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    filter: blur(100px);
+    pointer-events: none;
+  }
+
+  .cta-h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -2px;
+    max-width: 700px;
+    margin: 0 auto 16px;
+  }
+  .cta-h2 em { font-style: italic; color: var(--moss); }
+
+  .cta-sub {
+    font-size: 16px;
+    color: #7A7A6A;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+
+  .cta-form {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .cta-form-row {
+    display: flex; gap: 0;
+    background: white;
+    border-radius: 100px;
+    border: 1px solid rgba(26,26,20,0.1);
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(26,26,20,0.08);
+    width: 100%;
+    max-width: 440px;
+  }
+
+  .cta-input {
+    flex: 1;
+    border: none; outline: none;
+    padding: 16px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    background: transparent;
+    color: var(--ink);
+  }
+  .cta-input::placeholder { color: #B0B0A0; }
+
+  .cta-submit {
+    background: var(--moss);
+    color: var(--cream);
+    border: none;
+    padding: 12px 24px;
+    margin: 6px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .cta-submit:hover { background: var(--ink); }
+
+  .cta-whatsapp {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s;
+    margin-top: 4px;
+  }
+  .cta-whatsapp:hover { background: #1ebe5a; transform: translateY(-2px); box-shadow: 0 12px 40px rgba(37,211,102,0.3); }
+
+  .cta-disclaimer {
+    font-size: 12px;
+    color: #B0B0A0;
+    font-weight: 300;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--ink);
+    color: #6A6A5A;
+    padding: 32px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .footer-logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 18px;
+    color: var(--cream);
+  }
+
+  /* SUCCESS STATE */
+  .success-msg {
+    display: none;
+    background: var(--light-moss);
+    border: 1px solid var(--sage);
+    color: var(--moss);
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-size: 14px;
+    max-width: 440px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .hero { padding: 100px 24px 60px; }
+    .proof-strip { gap: 20px; padding: 16px 24px; }
+    .mockup-section { padding: 60px 24px; gap: 40px; flex-direction: column; align-items: flex-start; }
+    .features { padding: 60px 24px; }
+    .feat-card:first-child, .feat-card:last-child { border-radius: 0; }
+    .features-grid { gap: 2px; }
+    .testimonial-section { padding: 60px 24px; }
+    .how { padding: 60px 24px; }
+    .final-cta { padding: 80px 24px; }
+    footer { padding: 24px 20px; }
+    .phone { width: 220px; }
+    .phone-screen { min-height: 400px; }
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">HabitAI</div>
+  <a href="#cta" class="nav-cta">Quiero acceso gratis</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-orb orb1"></div>
+  <div class="hero-orb orb2"></div>
+  <div class="hero-orb orb3"></div>
+
+  <div class="hero-tag">
+    <div class="dot"></div>
+    Acceso anticipado abierto
+  </div>
+
+  <h1 class="hero-h1">
+    El coach que<br><em>nunca te abandona</em>
+  </h1>
+
+  <p class="hero-sub">
+    Una IA que aprende cómo eres, te habla cada mañana y te ayuda a construir los hábitos que siempre quisiste tener.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#cta" class="btn-primary">
+      Quiero probarlo gratis
+      <span class="arrow">→</span>
+    </a>
+    <span class="hero-note">Sin App Store · Se instala en 30 segundos · Gratis 30 días</span>
+  </div>
+</section>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-item">
+    <span class="proof-icon">🌍</span>
+    Funciona en cualquier idioma
+  </div>
+  <div class="proof-item">
+    <span class="proof-icon">📲</span>
+    Se instala con un link, como una app normal
+  </div>
+  <div class="proof-item">
+    <span class="proof-icon">🧠</span>
+    IA que recuerda tu progreso
+  </div>
+  <div class="proof-item">
+    <span class="proof-icon">🔔</span>
+    Recordatorios personalizados
+  </div>
+</div>
+
+<!-- MOCKUP SECTION -->
+<section class="mockup-section">
+  <div class="mockup-text reveal">
+    <p class="section-label">Cómo funciona</p>
+    <h2 class="section-h2">Tu coach personal <em>en el bolsillo</em></h2>
+    <p class="section-body">
+      Cada mañana te hace un check-in rápido. Según cómo respondas, ajusta tus hábitos del día. Si llevas una mala semana, lo detecta y cambia la estrategia. Si vas bien, te celebra y te reta a más.
+    </p>
+    <p class="section-body">
+      No es una app de to-do list. Es una IA que entiende que cambiar hábitos es difícil, y está contigo en los días buenos y en los malos.
+    </p>
+    <a href="#cta" class="btn-primary" style="display:inline-flex">
+      Empezar ahora
+      <span class="arrow">→</span>
+    </a>
+  </div>
+
+  <div class="phone-wrap reveal">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="phone-greeting">Hola, Ana 👋</div>
+          <div class="phone-streak">🔥 8 días</div>
+        </div>
+
+        <div class="chat-bubble">
+          Llevas 8 días seguidos meditando — eso es enorme. Hoy la meta es mantener la racha. ¿Cómo amaneciste?
+        </div>
+
+        <div class="habit-list">
+          <div class="habit-item">
+            <div class="habit-check check-done">✓</div>
+            <span class="habit-name">Meditar 10 min</span>
+            <span class="habit-streak">8 días 🔥</span>
+          </div>
+          <div class="habit-item">
+            <div class="habit-check check-todo"></div>
+            <span class="habit-name">Caminar 30 min</span>
+            <span class="habit-streak">3 días</span>
+          </div>
+          <div class="habit-item" style="border:none">
+            <div class="habit-check check-todo"></div>
+            <span class="habit-name">Leer antes de dormir</span>
+            <span class="habit-streak">5 días</span>
+          </div>
+        </div>
+
+        <div class="phone-input">
+          <span>Escríbele a tu coach...</span>
+          <div class="phone-send">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="#F5F0E8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-inner">
+    <div class="features-header reveal">
+      <p class="section-label">Por qué funciona</p>
+      <h2 class="section-h2" style="color:var(--cream)">Diseñado para <em>humanos reales</em></h2>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-num">01</div>
+        <div class="feat-title">Check-in diario inteligente</div>
+        <div class="feat-body">No son notificaciones vacías. La IA te pregunta cómo estás y adapta el plan según tu respuesta. Los días difíciles cuentan más que los fáciles.</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-num">02</div>
+        <div class="feat-title">Memoria de contexto</div>
+        <div class="feat-body">Recuerda lo que dijiste hace 3 semanas. Detecta si algo en tu vida está afectando tus hábitos. Aprende tu personalidad con el tiempo.</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-num">03</div>
+        <div class="feat-title">Sin App Store</div>
+        <div class="feat-body">Recibes un link. Lo abres en tu celular. En 30 segundos tienes un ícono en tu pantalla. Funciona igual que una app normal, sin descargar nada.</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-num">04</div>
+        <div class="feat-title">Tu idioma, tu tono</div>
+        <div class="feat-body">Responde en el idioma en que le escribas. Y si prefieres que te hable de forma directa, suave o motivacional, lo aprende en los primeros días.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial-section reveal">
+  <div class="quote-mark">"</div>
+  <p class="quote-text">
+    Probé 6 apps de hábitos. Todas me las dejé de usar en 2 semanas. Esto es diferente porque siente que alguien te espera cada mañana.
+  </p>
+  <div class="quote-author">
+    <div class="author-dot"></div>
+    Beta tester, Colombia
+    <div class="author-dot"></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="how-inner">
+    <div class="reveal" style="text-align:center;max-width:500px;margin:0 auto">
+      <p class="section-label">En 3 pasos</p>
+      <h2 class="section-h2">Empezar es <em>ridículamente fácil</em></h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-step reveal">
+        <div class="step-num">1</div>
+        <div class="step-title">Recibes el link</div>
+        <div class="step-body">Te mandamos el link por WhatsApp. Nada que descargar. Abre el link en tu celular y listo.</div>
+      </div>
+      <div class="how-step reveal">
+        <div class="step-num">2</div>
+        <div class="step-title">Instalas en 30 segundos</div>
+        <div class="step-body">Tu celular te pregunta si quieres agregar a pantalla de inicio. Dices sí. Aparece el ícono como una app normal.</div>
+      </div>
+      <div class="how-step reveal">
+        <div class="step-num">3</div>
+        <div class="step-title">Tu coach te espera</div>
+        <div class="step-body">La primera vez te hace 3 preguntas para conocerte. Desde mañana temprano ya tienes tu primer check-in personalizado.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="cta">
+  <h2 class="cta-h2 reveal">El mejor momento<br>para empezar era <em>ayer</em></h2>
+  <p class="cta-sub reveal">El segundo mejor momento es hoy. 30 días gratis, sin tarjeta de crédito.</p>
+
+  <div class="cta-form reveal">
+
+    <!-- OPCIÓN 1: Formulario de email (reemplaza el action con tu Formspree o similar) -->
+    <!--
+    <form class="cta-form-row" onsubmit="handleSubmit(event)">
+      <input class="cta-input" type="email" placeholder="tu@email.com" required>
+      <button class="cta-submit" type="submit">Quiero acceso →</button>
+    </form>
+    -->
+
+    <!-- OPCIÓN 2: Botón de WhatsApp (REEMPLAZA el número) -->
+    <a
+      href="https://wa.me/573154096643?text=Hola%2C%20vi%20HabitAI%20y%20quiero%20el%20acceso%20anticipado%20gratis%20%F0%9F%8C%B1"
+      class="cta-whatsapp"
+      target="_blank"
+      id="whatsapp-btn"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Escribir por WhatsApp
+    </a>
+
+    <p class="cta-disclaimer">Solo usamos tu contacto para enviarte el link de acceso. Sin spam.</p>
+
+    <div class="success-msg" id="success">
+      ¡Perfecto! Te enviamos el link en los próximos minutos. Revisa tu WhatsApp 🌱
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">HabitAI</div>
+  <span>Hecho con IA · Para humanos reales</span>
+  <span>© 2026</span>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(el => {
+      if (el.isIntersecting) {
+        el.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // WhatsApp button — reemplaza con tu número real
+  // Formato: https://wa.me/[código país][número sin espacios]
+  // Ejemplo Colombia: https://wa.me/573001234567
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    document.querySelector('.cta-form-row').style.display = 'none';
+    document.getElementById('success').style.display = 'block';
+    // Aquí agregas la lógica de envío (Formspree, EmailJS, etc.)
+  }
+</script>
+</body>
+</html>
