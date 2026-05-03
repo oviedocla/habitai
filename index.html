@@ -628,10 +628,10 @@ body {
       <input class="field-input" type="text" id="onb-name" placeholder="¿Cómo te llamas?" autocomplete="given-name">
     </div>
     <div>
-      <div class="field-label">API Key de Anthropic</div>
-      <input class="field-input" type="password" id="onb-apikey" placeholder="sk-ant-...">
+      <div class="field-label">API Key de Anthropic <span style="opacity:0.5;font-size:10px">(opcional — para activar el coach IA)</span></div>
+      <input class="field-input" type="password" id="onb-apikey" placeholder="sk-ant-... (puedes agregarlo después)">
       <div class="api-note" style="margin-top:6px">
-        Obtén tu key gratis en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key
+        Sin key la app funciona completa — hábitos, rachas y estadísticas. El coach IA se activa cuando agregues la key. Gratis en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
       </div>
     </div>
     <button class="btn-onb" onclick="saveOnboarding()">Empezar →</button>
@@ -805,7 +805,7 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('loading').style.opacity = '0';
     setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-    if (!state.name || !state.apiKey) {
+    if (!state.name) {
       showScreen('screen-onboarding');
     } else {
       showScreen('screen-app');
@@ -835,13 +835,12 @@ function saveOnboarding() {
   const name = document.getElementById('onb-name').value.trim();
   const key = document.getElementById('onb-apikey').value.trim();
   if (!name) { alert('Escribe tu nombre'); return; }
-  if (!key || !key.startsWith('sk-ant-')) { alert('La API key debe empezar con sk-ant-'); return; }
+  if (key && !key.startsWith('sk-ant-')) { alert('La API key debe empezar con sk-ant-'); return; }
   state.name = name;
-  state.apiKey = key;
+  state.apiKey = key || '';
   saveState();
   showScreen('screen-app');
   initApp();
-  // Add welcome habit
   if (state.habits.length === 0) {
     addDefaultHabits();
   }
@@ -1229,7 +1228,10 @@ Responde de forma cálida, concisa y personalizada. Usa el nombre del usuario oc
     renderChatMessages();
   } catch(e) {
     document.getElementById('typing')?.remove();
-    state.chatHistory.push({ role:'assistant', content: 'Tuve un problema conectándome. Verifica tu API key en configuración.' });
+    const msg = e.message === 'sin-key'
+      ? '🔑 Para activar el coach de IA necesitas una API key de Anthropic. Consíguela gratis en console.anthropic.com y agrégala en Configuración.'
+      : 'Tuve un problema conectándome. Verifica tu API key.';
+    state.chatHistory.push({ role:'assistant', content: msg });
     renderChatMessages();
   }
   document.getElementById('chat-send-btn').disabled = false;
@@ -1237,6 +1239,7 @@ Responde de forma cálida, concisa y personalizada. Usa el nombre del usuario oc
 
 // ─── CLAUDE API ───────────────────────────────────────────────────────────────
 async function callClaude(messages) {
+  if (!state.apiKey) throw new Error('sin-key');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
