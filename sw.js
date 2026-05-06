@@ -1,4 +1,4 @@
-const CACHE = 'habitai-v1';
+const CACHE = 'habitai-v2';
 const ASSETS = [
   '/',
   '/index.html',
